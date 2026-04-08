@@ -9,7 +9,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -66,7 +65,11 @@ public class StockServiceImpl implements StockService {
             int result = stockMapper.updateAvailableQuantity(productId, quantity, stock.getVersion());
             if (result > 0) {
                 // 更新成功，增加已占用库存
-                stockMapper.increaseReservedQuantity(productId, quantity);
+                int reservedUpdated = stockMapper.increaseReservedQuantity(productId, quantity);
+                if (reservedUpdated != 1) {
+                    changeLogMapper.updateStatus(log.getId(), 2, "增加预占库存失败，影响行数: " + reservedUpdated);
+                    throw new IllegalStateException("增加预占库存失败，productId=" + productId + ", affectedRows=" + reservedUpdated);
+                }
                 // 记录日志为已处理
                 changeLogMapper.updateStatus(log.getId(), 1, "成功");
                 return true;
@@ -139,8 +142,6 @@ public class StockServiceImpl implements StockService {
         }
 
         Stock stock = new Stock(productId, totalQuantity);
-        stock.setCreateTime(LocalDateTime.now());
-        stock.setUpdateTime(LocalDateTime.now());
         stockMapper.insert(stock);
     }
 

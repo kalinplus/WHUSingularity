@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS `stock` (
   `version` BIGINT NOT NULL DEFAULT 0 COMMENT '版本号，用于乐观锁',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  INDEX `idx_product_id` (`product_id`),
   INDEX `idx_update_time` (`update_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='库存表';
 
@@ -27,7 +26,6 @@ CREATE TABLE IF NOT EXISTS `stock_change_log` (
   `remark` VARCHAR(512) COMMENT '处理结果说明',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  UNIQUE INDEX `uk_message_id` (`message_id`),
   INDEX `idx_product_id` (`product_id`),
   INDEX `idx_order_id` (`order_id`),
   INDEX `idx_status` (`status`),

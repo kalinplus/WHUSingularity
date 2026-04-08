@@ -14,7 +14,10 @@ import org.springframework.stereotype.Component;
  * 消息格式: productId|quantity|changeType|orderId|messageId
  */
 @Component
-@RocketMQMessageListener(topic = "stock-topic", consumerGroup = "stock-consumer-group", consumeMode = org.apache.rocketmq.spring.annotation.ConsumeMode.ORDERLY)
+@RocketMQMessageListener(
+        topic = "${rocketmq.consumer.stock.topic:stock-topic}",
+        consumerGroup = "${rocketmq.consumer.stock.group:stock-consumer-group}",
+        consumeMode = org.apache.rocketmq.spring.annotation.ConsumeMode.ORDERLY)
 public class StockConsumer implements RocketMQListener<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(StockConsumer.class);
@@ -70,6 +73,9 @@ public class StockConsumer implements RocketMQListener<String> {
                 logger.warn("库存变更处理失败: messageId={}, productId={}, changeType={}", 
                         messageId, productId, changeType);
             }
+        } catch (NumberFormatException e) {
+            // 数字字段解析失败属于不可重试错误，直接记录并丢弃
+            logger.warn("忽略非法库存消息(数字字段解析失败): {}, reason={}", message, e.getMessage());
         } catch (IllegalArgumentException e) {
             // 非法参数属于不可重试错误，直接记录并丢弃
             logger.warn("忽略非法库存消息: {}, reason={}", message, e.getMessage());

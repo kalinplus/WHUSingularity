@@ -12,6 +12,13 @@
     </parent>
 
     <artifactId>singularity-stock</artifactId>
+    <name>singularity-stock</name>
+    <description>
+        Stock service module. If the parent aggregator pom.xml does not declare this module in
+        &lt;modules&gt;, build it explicitly with: mvn -f singularity-stock/pom.xml package.
+        Prefer adding &lt;module&gt;singularity-stock&lt;/module&gt; to the parent pom.xml for default
+        multi-module builds.
+    </description>
 
     <dependencies>
         <!-- singularity-core -->
