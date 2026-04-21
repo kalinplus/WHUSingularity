@@ -1,5 +1,5 @@
 import { request } from './client'
-import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, User } from './types'
+import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, User, UserDetail, UpdateUserRequest, RechargeRequest } from './types'
 
 export const userApi = {
   login: (data: LoginRequest) =>
@@ -13,4 +13,16 @@ export const userApi = {
 
   me: () =>
     request<User>({ method: 'GET', url: '/api/user/me' }),
+
+  list: () =>
+    request<UserDetail[]>({ method: 'GET', url: '/api/user/list' }),
+
+  update: (id: number, data: UpdateUserRequest) =>
+    request<User>({ method: 'PUT', url: `/api/user/${id}`, data }),
+
+  remove: (id: number) =>
+    request({ method: 'DELETE', url: `/api/user/${id}` }),
+
+  recharge: (id: number, data: RechargeRequest) =>
+    request({ method: 'POST', url: `/api/user/${id}/recharge`, data }),
 }

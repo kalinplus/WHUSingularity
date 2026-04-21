@@ -61,3 +61,10 @@ singularity-stock/   — 库存服务：库存管理，MQ 驱动，Flyway 迁移
 ## Documentation
 
 `docs/` 目录包含各服务的设计文档、API 契约、场景验收和进度记录，是理解业务细节的主要参考。
+
+### 文档更新约定
+
+完成一个 feature 或阶段性进展后，自动更新相关文档：
+- `docs/frontend/progress.md` — 更新已完成/待实现状态
+- `docs/frontend/0421-phase1-task-cards.md` 等任务卡 — 标记已完成步骤和状态
+- 不要创建新的文档文件，只更新已有文档
