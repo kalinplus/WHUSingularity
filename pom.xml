@@ -13,17 +13,20 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring-cloud-alibaba.version>2023.0.3.2</spring-cloud-alibaba.version>
     </properties>
     
     <modules>
         <module>singularity-core</module>
-        <module>singularity-eureka</module>
+        <!-- <module>singularity-eureka</module> -->  <!-- Deprecated: replaced by Nacos -->
         <module>singularity-user</module>
         <module>singularity-order</module>
+        <module>singularity-stock</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Boot BOM -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -31,6 +34,8 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            
+            <!-- Spring Cloud BOM -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -38,11 +43,24 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            
+            <!-- Spring Cloud Alibaba BOM (Nacos) -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            
+            <!-- MyBatis -->
             <dependency>
                 <groupId>org.mybatis.spring.boot</groupId>
                 <artifactId>mybatis-spring-boot-starter</artifactId>
                 <version>3.0.4</version>
             </dependency>
+            
+            <!-- RocketMQ -->
             <dependency>
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-spring-boot-starter</artifactId>

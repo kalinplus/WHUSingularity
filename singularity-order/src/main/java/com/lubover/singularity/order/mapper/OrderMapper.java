@@ -1,18 +1,37 @@
 package com.lubover.singularity.order.mapper;
 
 import com.lubover.singularity.order.entity.Order;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Param;
 
+/**
+ * 订单 Mapper 接口
+ */
 @Mapper
 public interface OrderMapper {
 
-    @Insert("INSERT INTO t_order (order_id, actor_id, slot_id, status, create_time) " +
-            "VALUES (#{orderId}, #{actorId}, #{slotId}, #{status}, #{createTime})")
+    /**
+     * 插入订单记录
+     * 
+     * @param order 订单实体
+     * @return 影响的行数
+     */
     int insert(Order order);
 
-    @Select("SELECT id, order_id, actor_id, slot_id, status, create_time " +
-            "FROM t_order WHERE order_id = #{orderId}")
-    Order selectByOrderId(String orderId);
+    /**
+     * 根据订单ID查询订单
+     * 
+     * @param orderId 订单ID
+     * @return 订单实体，不存在则返回 null
+     */
+    Order selectByOrderId(@Param("orderId") String orderId);
+
+    /**
+     * 更新订单状态
+     * 
+     * @param orderId 订单ID
+     * @param status 新状态
+     * @return 影响的行数
+     */
+    int updateStatus(@Param("orderId") String orderId, @Param("status") String status);
 }

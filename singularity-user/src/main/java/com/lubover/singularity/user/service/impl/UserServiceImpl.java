@@ -1,21 +1,26 @@
 package com.lubover.singularity.user.service.impl;
 
-import com.lubover.singularity.user.entity.User;
-import com.lubover.singularity.user.exception.BusinessException;
-import com.lubover.singularity.user.exception.ErrorCode;
-import com.lubover.singularity.user.mapper.UserMapper;
-import com.lubover.singularity.user.service.UserService;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import com.lubover.singularity.user.config.CacheConfig;
+import com.lubover.singularity.user.entity.User;
+import com.lubover.singularity.user.exception.BusinessException;
+import com.lubover.singularity.user.exception.ErrorCode;
+import com.lubover.singularity.user.mapper.UserMapper;
+import com.lubover.singularity.user.service.UserService;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -30,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;
 
     @Override
+    @CachePut(value = CacheConfig.USER_CACHE_NAME, key = "#result.id")
     public User register(String username, String password, String nickname) {
         validateRegisterRequest(username, password, nickname);
 
@@ -52,6 +58,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Caching(put = {
+            @CachePut(value = CacheConfig.USER_CACHE_NAME, key = "#result.id"),
+            @CachePut(value = CacheConfig.USER_USERNAME_CACHE_NAME, key = "#username")
+    })
     public User login(String username, String password) {
         validateLoginRequest(username, password);
 
@@ -66,18 +76,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = CacheConfig.USER_CACHE_NAME, key = "#id", unless = "#result == null")
     public User getUserById(Long id) {
-        String cacheKey = "user:id:" + id;
-        String cached = redisTemplate.opsForValue().get(cacheKey);
-        
-        User user = userMapper.selectById(id);
-        if (user != null) {
-            redisTemplate.opsForValue().set(cacheKey, user.getId().toString(), 30, TimeUnit.MINUTES);
-        }
-        return user;
+        return userMapper.selectById(id);
     }
 
     @Override
+    @Cacheable(value = CacheConfig.USER_USERNAME_CACHE_NAME, key = "#username", unless = "#result == null")
     public User getUserByUsername(String username) {
         return userMapper.selectByUsername(username);
     }
@@ -89,6 +94,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CachePut(value = CacheConfig.USER_CACHE_NAME, key = "#id")
+    @CacheEvict(value = CacheConfig.USER_USERNAME_CACHE_NAME, allEntries = true)
     public User updateUser(Long id, String password, String nickname, String role, BigDecimal balance) {
         User user = userMapper.selectById(id);
         if (user == null) {
@@ -114,6 +121,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {CacheConfig.USER_CACHE_NAME, CacheConfig.USER_USERNAME_CACHE_NAME}, allEntries = true)
     public boolean deleteUser(Long id) {
         User user = userMapper.selectById(id);
         if (user == null) {
@@ -124,6 +132,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {CacheConfig.USER_CACHE_NAME, CacheConfig.USER_USERNAME_CACHE_NAME}, allEntries = true)
     public boolean recharge(Long id, BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.REQ_INVALID_PARAM, "Recharge amount must be positive");
@@ -140,6 +149,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {CacheConfig.USER_CACHE_NAME, CacheConfig.USER_USERNAME_CACHE_NAME}, allEntries = true)
     public boolean deduct(Long id, BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.REQ_INVALID_PARAM, "Deduct amount must be positive");
