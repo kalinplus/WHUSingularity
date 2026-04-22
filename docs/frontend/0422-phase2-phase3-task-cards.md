@@ -1,7 +1,7 @@
 # Phase 2 + Phase 3 前端实现计划
 
 > 日期：2026-04-22
-> 状态：待实施
+> 状态：Task 4、Task 5 已完成
 > 前置：Phase 1 已完成（全局布局、Admin 用户管理、Stock/Order API 客户端）
 > 后端状态：order list / stock 全部接口已就绪
 
@@ -17,12 +17,12 @@
 
 ### 分步计划（有序，每步独立可验收）
 
-**Step 1: 创建秒杀主页组件骨架**
+**Step 1: 创建秒杀主页组件骨架** ✅
 - 产出物: 新建 `src/pages/Home.tsx`
 - 内容: 页面结构分为两部分——商品列表区（Card 网格）、抢单结果反馈区（Alert/Notification）。使用 `useEffect` 每 3s 轮询 `stockApi.list()` 刷新库存
 - 验收: 访问 `/` 页面正常渲染，3s 后库存数字自动更新
 
-**Step 2: 实现抢单按钮与防重复提交**
+**Step 2: 实现抢单按钮与防重复提交** ✅
 - 产出物: 修改 `src/pages/Home.tsx`
 - 内容: 每个商品 Card 上有抢单按钮，点击后：
   1. 按钮置为 loading 态，禁用点击
@@ -31,12 +31,12 @@
   4. 无论成败，2s 后按钮恢复可点击
 - 验收: 快速连续点击同一商品按钮，只发出一次请求；错误提示可读
 
-**Step 3: 轮询抢单结果**
+**Step 3: 轮询抢单结果** ✅
 - 产出物: 修改 `src/pages/Home.tsx`
 - 内容: 抢单成功后，每 2s 轮询 `orderApi.list({ actorId: user.id, page: 0, size: 1 })` 查看最新订单状态，直到状态变为 `PAID` 或 `CANCELLED`，停止轮询并展示最终结果
 - 验收: 抢单后页面自动刷新订单状态，最终显示"抢单成功"或"抢单失败"
 
-**Step 4: 路由替换**
+**Step 4: 路由替换** ✅
 - 产出物: 修改 `src/App.tsx`
 - 内容: 将 `/` 的 `Placeholder` 替换为 `Home` 组件
 - 验收: 登录后访问 `/` 显示秒杀主页
@@ -84,12 +84,12 @@
 
 ### 分步计划（有序，每步独立可验收）
 
-**Step 1: AppLayout 添加用户中心入口**
+**Step 1: AppLayout 添加用户中心入口** ✅
 - 产出物: 修改 `src/components/AppLayout.tsx`
 - 内容: 顶栏用户名旁添加"用户中心"链接，点击跳转 `/user`
 - 验收: 登录后顶栏显示"用户中心"，点击跳转 `/user`（此时页面为空或 Placeholder）
 
-**Step 2: 创建用户中心页面骨架**
+**Step 2: 创建用户中心页面骨架** ✅
 - 产出物: 新建 `src/pages/UserCenter.tsx`
 - 内容: 页面分三区块：
   - 用户信息卡片：用户名、昵称、角色
@@ -97,12 +97,12 @@
   - 订单列表：Table，调用 `orderApi.list({ actorId: user.id })`
 - 验收: 页面正常渲染，信息正确，充值 Modal 可弹出
 
-**Step 3: 实现订单列表分页**
+**Step 3: 实现订单列表分页** ✅
 - 产出物: 修改 `src/pages/UserCenter.tsx`
 - 内容: Ant Design Table 自带分页，切换页码时调用 `orderApi.list` 并传入对应 `page`/`size`
 - 验收: 订单超过 10 条时分页器出现，切换页码正确加载数据
 
-**Step 4: 注册路由**
+**Step 4: 注册路由** ✅
 - 产出物: 修改 `src/App.tsx`
 - 内容: 在 ProtectedRoute 下添加 `/user` 路由
 - 验收: 访问 `/user` 正常显示用户中心页面

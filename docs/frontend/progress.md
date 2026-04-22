@@ -22,6 +22,8 @@
 | 登录页 | 表单校验、错误提示、登录后跳转 | `pages/Login.tsx` |
 | 注册页 | 表单校验（用户名 4-32、密码 8-64）、注册后跳转登录 | `pages/Register.tsx` |
 | Admin 用户管理 | 用户列表 Table + 编辑 Modal + 删除 Popconfirm | `pages/admin/AdminUserList.tsx` |
+| 秒杀主页 `/` | 商品 Card 网格、3s 库存轮询、抢单按钮防重复、订单结果轮询展示 | `pages/Home.tsx` |
+| 用户中心 `/user` | 用户信息卡片、余额充值 Modal、订单列表分页 Table | `pages/UserCenter.tsx` |
 | WHU 主题 | Ant Design ConfigProvider 配色 | `App.tsx` |
 | Vite 代理 | `/api/user` → 8090, `/api/order` → 8081, `/api/stock` → 8082 | `vite.config.ts` |
 
@@ -29,10 +31,9 @@
 
 | 模块 | 内容 | 依赖后端 |
 |---|---|---|
-| 秒杀主页 `/` | 商品列表、库存轮询、抢单按钮、倒计时、结果反馈 | 部分（stock OK，order list 已就绪） |
-| 用户中心 `/user` | 个人信息、余额充值、我的订单、退出登录 | 否（user + order list 均就绪） |
 | Admin - 库存管理 `/admin/stock` | 库存列表/初始化/变更日志 | 否（stock Controller 已就绪） |
 | Admin - 订单管理 `/admin/orders` | 订单列表/筛选 | 否（order Controller 已就绪） |
+| WebMCP 集成 | 浏览器 AI 调用页面 tools | 否 |
 
 ---
 
@@ -57,10 +58,10 @@
 
 ### Phase 2 — 后端接口已就绪，可继续前端页面开发
 
-| # | 任务 | 理由 |
+| # | 任务 | 状态 |
 |---|---|---|
-| 4 | **秒杀主页** `/` | 核心业务页面：商品列表、库存轮询（3s）、抢单按钮防重复、倒计时、结果反馈。order + stock 接口已可用 |
-| 5 | **用户中心** `/user` | 个人信息展示（已可用）+ 余额充值（已可用）+ 我的订单列表（order list 接口已可用） |
+| 4 | **秒杀主页** `/` | 已完成 |
+| 5 | **用户中心** `/user` | 已完成 |
 
 ### Phase 3 — 管理 + 增强（低优先级，后端接口已就绪）
 

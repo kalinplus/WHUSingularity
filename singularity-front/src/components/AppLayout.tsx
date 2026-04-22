@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Layout, Button, Space, Typography } from 'antd'
+import { Layout, Button, Space, Typography, Dropdown } from 'antd'
+import { DownOutlined } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 
 const { Header, Content } = Layout
@@ -14,6 +15,10 @@ export default function AppLayout() {
     navigate('/login', { replace: true })
   }
 
+  const adminItems = [
+    { key: 'users', label: '用户管理', onClick: () => navigate('/admin/users') },
+  ]
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -22,10 +27,15 @@ export default function AppLayout() {
         </Text>
         <Space>
           <Text style={{ color: 'rgba(255,255,255,0.85)' }}>{user?.nickname ?? user?.username}</Text>
+          <Button type="link" style={{ color: 'rgba(255,255,255,0.85)' }} onClick={() => navigate('/user')}>
+            用户中心
+          </Button>
           {user?.role === 'admin' && (
-            <Button type="link" style={{ color: 'rgba(255,255,255,0.85)' }} onClick={() => navigate('/admin/users')}>
-              管理页
-            </Button>
+            <Dropdown menu={{ items: adminItems }} placement="bottomRight">
+              <Button type="link" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                管理页 <DownOutlined />
+              </Button>
+            </Dropdown>
           )}
           <Button type="link" style={{ color: 'rgba(255,255,255,0.85)' }} onClick={handleLogout}>
             退出

@@ -6,11 +6,9 @@ import { AdminRoute } from './components/AdminGuard'
 import AppLayout from './components/AppLayout'
 import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
+import Home from './pages/Home'
+import UserCenter from './pages/UserCenter'
 import AdminUserList from './pages/admin/AdminUserList'
-
-function Placeholder() {
-  return <div style={{ padding: 40 }}>秒杀主页 — 待实现</div>
-}
 
 export default function App() {
   return (
@@ -31,7 +29,8 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Placeholder />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/user" element={<UserCenter />} />
               <Route path="/admin/users" element={<AdminRoute><AdminUserList /></AdminRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
