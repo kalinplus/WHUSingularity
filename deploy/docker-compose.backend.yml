@@ -1,0 +1,144 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: singularity-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: singularity-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  nacos:
+    image: nacos/nacos-server:v2.4.2
+    container_name: singularity-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      TZ: Asia/Shanghai
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+
+  rmq-namesrv:
+    image: apache/rocketmq:4.9.7
+    container_name: singularity-rmq-namesrv
+    restart: unless-stopped
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+
+  rmq-broker:
+    image: apache/rocketmq:4.9.7
+    container_name: singularity-rmq-broker
+    restart: unless-stopped
+    command: sh mqbroker -n rmq-namesrv:9876 autoCreateTopicEnable=true
+    depends_on:
+      - rmq-namesrv
+    ports:
+      - "10911:10911"
+      - "10909:10909"
+
+  singularity-user:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: singularity-user
+    restart: unless-stopped
+    working_dir: /workspace
+    command: sh -c "mvn -pl singularity-user -am -DskipTests package && java -jar singularity-user/target/singularity-user-1.0-SNAPSHOT.jar"
+    environment:
+      SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_user?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      JWT_SECRET: dev-secret-key
+    volumes:
+      - ../:/workspace
+      - maven_repo:/root/.m2
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    ports:
+      - "8090:8090"
+
+  singularity-stock:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: singularity-stock
+    restart: unless-stopped
+    working_dir: /workspace
+    command: sh -c "mvn -pl singularity-stock -am -DskipTests package && java -jar singularity-stock/target/singularity-stock-1.0-SNAPSHOT.jar"
+    environment:
+      SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_stock?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      ROCKETMQ_NAME_SERVER: rmq-namesrv:9876
+      ROCKETMQ_CONSUMER_GROUP: stock-consumer-group
+    volumes:
+      - ../:/workspace
+      - maven_repo:/root/.m2
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+      - rmq-broker
+    ports:
+      - "8082:8082"
+
+  singularity-order:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: singularity-order
+    restart: unless-stopped
+    working_dir: /workspace
+    command: sh -c "mvn -pl singularity-order -am -DskipTests package && java -jar singularity-order/target/singularity-order-1.0-SNAPSHOT.jar"
+    environment:
+      SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_order?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      ROCKETMQ_NAME_SERVER: rmq-namesrv:9876
+      ROCKETMQ_PRODUCER_GROUP: order-producer-group
+      ROCKETMQ_CONSUMER_GROUP: order-consumer-group
+      SPRING_APPLICATION_JSON: '{"singularity":{"order":{"slots":[{"id":"bucket-1","redis-key":"stock:bucket-1"},{"id":"bucket-2","redis-key":"stock:bucket-2"}]}}}'
+    volumes:
+      - ../:/workspace
+      - maven_repo:/root/.m2
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+      - rmq-broker
+    ports:
+      - "8081:8081"
+
+volumes:
+  mysql_data:
+  maven_repo:
