@@ -8,6 +8,8 @@ import type { Stock } from '../api/types'
 
 const { Title, Text } = Typography
 
+const POLLING_KEY = 'singularity:polling-orders'
+
 interface PollingOrder {
   orderId: string
   status: string
@@ -49,6 +51,10 @@ export default function Home() {
       clearInterval(id)
       pollingRef.current.delete(orderId)
     }
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(POLLING_KEY) ?? '[]')
+      sessionStorage.setItem(POLLING_KEY, JSON.stringify(saved.filter((o: { orderId: string }) => o.orderId !== orderId)))
+    } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
@@ -61,7 +67,17 @@ export default function Home() {
   const startPollingOrder = useCallback((orderId: string, productId: string) => {
     if (pollingRef.current.has(orderId)) return
 
-    setPollingOrders((prev) => [...prev, { orderId, status: '0', productId }])
+    setPollingOrders((prev) => {
+      if (prev.some(o => o.orderId === orderId)) return prev
+      return [...prev, { orderId, status: 'CREATED', productId }]
+    })
+
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(POLLING_KEY) ?? '[]')
+      if (!saved.some((o: { orderId: string }) => o.orderId === orderId)) {
+        sessionStorage.setItem(POLLING_KEY, JSON.stringify([...saved, { orderId, productId }]))
+      }
+    } catch { /* ignore */ }
 
     const poll = async () => {
       try {
@@ -73,7 +89,7 @@ export default function Home() {
         setPollingOrders((prev) =>
           prev.map((o) => (o.orderId === orderId ? { ...o, status } : o))
         )
-        if (status === '1' || status === '2') {
+        if (status === 'PAID' || status === 'CANCELLED') {
           stopPolling(orderId)
         }
       } catch {
@@ -85,6 +101,15 @@ export default function Home() {
     const intervalId = window.setInterval(poll, 2000)
     pollingRef.current.set(orderId, intervalId)
   }, [user, stopPolling])
+
+  useEffect(() => {
+    if (!user) return
+    try {
+      JSON.parse(sessionStorage.getItem(POLLING_KEY) ?? '[]').forEach(
+        (o: { orderId: string; productId: string }) => startPollingOrder(o.orderId, o.productId)
+      )
+    } catch { /* ignore */ }
+  }, [user, startPollingOrder])
 
   const handleSnag = async (productId: string) => {
     if (!user) return
@@ -114,8 +139,8 @@ export default function Home() {
   }
 
   const statusLabel = (status: string) => {
-    if (status === '1') return { text: '抢单成功', color: 'success' as const }
-    if (status === '2') return { text: '抢单失败', color: 'error' as const }
+    if (status === 'PAID') return { text: '抢单成功', color: 'success' as const }
+    if (status === 'CANCELLED') return { text: '抢单失败', color: 'error' as const }
     return { text: '处理中...', color: 'processing' as const }
   }
 

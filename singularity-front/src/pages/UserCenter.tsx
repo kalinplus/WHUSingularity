@@ -96,8 +96,8 @@ export default function UserCenter() {
       title: '状态',
       dataIndex: 'status',
       render: (v: string) => {
-        if (v === '1') return <Tag color="success">成功</Tag>
-        if (v === '2') return <Tag color="error">失败</Tag>
+        if (v === 'PAID') return <Tag color="success">成功</Tag>
+        if (v === 'CANCELLED') return <Tag color="error">失败</Tag>
         return <Tag color="processing">处理中</Tag>
       },
     },
