@@ -1,7 +1,7 @@
 # 前端 API 契约
 
-> 版本：v1.0
-> 日期：2026-04-20
+> 版本：v1.1
+> 日期：2026-04-23
 > 说明：前端需要消费的所有接口定义。标注"已就绪"的接口后端已实现；标注"待实现"的接口后端需按此契约开发。如果后端有调整，或者实际实现和文档有冲突，在这个文档的最后单开一节标注和说明
 
 ## 1. 通用约定
@@ -354,8 +354,7 @@ Authorization: Bearer <jwt>
 {
   "success": true,
   "data": {
-    "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "status": 0
+    "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
   }
 }
 ```
@@ -363,16 +362,19 @@ Authorization: Bearer <jwt>
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | orderId | string | 订单 ID（UUID） |
-| status | number | 订单状态：0=处理中 |
+
+> **注意**：后端实际只返回 `orderId`，不返回 `status` 字段。前端应从订单列表轮询状态。
 
 **失败响应**
 
-| HTTP | code | 含义 |
-|---|---|---|
-| 400 | `REQ_INVALID_PARAM` | userId 缺失 |
-| 401 | `AUTH_TOKEN_*` | 未认证 |
-| 409 | `ORDER_STOCK_EMPTY` | 库存不足 |
-| 409 | `ORDER_DUPLICATE` | 重复抢单 |
+> 后端实际返回 `{ "success": false, "message": "<string>" }`，没有 `error.code` 结构。
+
+| HTTP | 含义 |
+|---|---|
+| 400 | userId 缺失 |
+| 401 | 未认证 |
+| 409 | 库存不足 |
+| 409 | 重复抢单 |
 
 ---
 
@@ -381,16 +383,16 @@ Authorization: Bearer <jwt>
 - **Method**: `GET`
 - **Path**: `/api/order/list`
 - **Auth**: 是
-- **状态**: **待实现**
+- **状态**: 已就绪
 
 **查询参数**
 
 | 参数 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| actorId | string | 否 | 按用户 ID 过滤（普通用户只能查自己的） |
-| status | number | 否 | 按订单状态过滤 |
-| page | number | 否 | 页码，默认 1 |
-| size | number | 否 | 每页条数，默认 20 |
+| actorId | string | 否 | 按用户 ID 过滤（普通用户只能查自己的），后端内部映射为 `userId` |
+| status | string | 否 | 按订单状态过滤（字符串，如 `"CREATED"`） |
+| page | number | 否 | 页码，默认 0（从 0 开始） |
+| size | number | 否 | 每页条数，默认 10 |
 
 **成功响应 200**
 
@@ -401,27 +403,31 @@ Authorization: Bearer <jwt>
     "content": [
       {
         "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "actorId": "1001",
-        "slotId": "PROD_001",
-        "status": 1,
-        "createTime": "2026-04-20T12:00:00"
+        "userId": "1001",
+        "productId": "PROD_001",
+        "slotId": "bucket-1",
+        "status": "CREATED",
+        "createTime": "2026-04-20T12:00:00",
+        "updateTime": "2026-04-20T12:00:00"
       }
     ],
     "totalElements": 1,
     "totalPages": 1,
-    "page": 1,
-    "size": 20
+    "page": 0,
+    "size": 10
   }
 }
 ```
 
 **订单状态**
 
+> 后端实际返回字符串类型，非数字。当前仅有 `CREATED`。
+
 | status | 含义 |
 |---|---|
-| 0 | 处理中（MQ 事务未完成） |
-| 1 | 成功 |
-| 2 | 失败（库存不足/事务回滚） |
+| `CREATED` | 已创建（当前唯一状态，后端硬编码） |
+| `PAID` | 已支付（预留，后端尚未实现状态流转） |
+| `CANCELLED` | 已取消（预留，后端尚未实现状态流转） |
 
 ---
 
@@ -432,7 +438,7 @@ Authorization: Bearer <jwt>
 - **Method**: `GET`
 - **Path**: `/api/stock/{productId}`
 - **Auth**: 否
-- **状态**: **待实现**
+- **状态**: 已就绪
 
 **路径参数**
 
@@ -472,7 +478,7 @@ Authorization: Bearer <jwt>
 - **Method**: `GET`
 - **Path**: `/api/stock/list`
 - **Auth**: 否
-- **状态**: **待实现**
+- **状态**: 已就绪
 
 **成功响应 200**
 
@@ -503,7 +509,7 @@ Authorization: Bearer <jwt>
 - **Method**: `POST`
 - **Path**: `/api/stock/init`
 - **Auth**: 是（Admin）
-- **状态**: **待实现**
+- **状态**: 已就绪
 
 **请求体**
 
@@ -542,7 +548,7 @@ Authorization: Bearer <jwt>
 - **Method**: `GET`
 - **Path**: `/api/stock/change-log`
 - **Auth**: 是（Admin）
-- **状态**: **待实现**
+- **状态**: 已就绪
 
 **查询参数**
 
@@ -602,8 +608,40 @@ Authorization: Bearer <jwt>
 | `PUT /api/user/{id}` | 已就绪 |
 | `DELETE /api/user/{id}` | 已就绪 |
 | `POST /api/order/snag` | 已就绪 |
-| `GET /api/order/list` | **待实现** |
-| `GET /api/stock/{productId}` | **待实现** |
-| `GET /api/stock/list` | **待实现** |
-| `POST /api/stock/init` | **待实现** |
-| `GET /api/stock/change-log` | **待实现** |
+| `GET /api/order/list` | 已就绪 |
+| `GET /api/stock/{productId}` | 已就绪 |
+| `GET /api/stock/list` | 已就绪 |
+| `POST /api/stock/init` | 已就绪 |
+| `GET /api/stock/change-log` | 已就绪 |
+
+---
+
+## 6. 与后端实现不一致之处
+
+> 本节记录前端契约与后端实际实现的差异，供前端兼容参考。
+
+### 6.1 响应结构
+
+- **契约约定**：失败响应为 `{ "success": false, "error": { "code": "...", "message": "..." } }`
+- **后端实际**：失败响应为 `{ "success": false, "message": "..." }`（无 `error` 嵌套，无错误码）
+
+### 6.2 订单状态类型
+
+- **契约约定**：`status` 为 `number`（0/1/2）
+- **后端实际**：`status` 为 `string`（`CREATED`/`PAID`/`CANCELLED`），当前仅有 `CREATED`
+
+### 6.3 抢单响应
+
+- **契约约定**：返回 `{ "orderId": "...", "status": 0 }`
+- **后端实际**：仅返回 `{ "orderId": "..." }`，不含 `status` 字段
+
+### 6.4 订单列表字段名
+
+- **契约约定**：用户 ID 字段为 `actorId`
+- **后端实际**：字段名为 `userId`
+- **补充**：订单实体额外包含 `productId` 和 `updateTime` 字段
+
+### 6.5 分页约定
+
+- **契约约定**：`page` 从 1 开始，默认 20 条/页
+- **后端实际**：`page` 从 0 开始，默认 10 条/页

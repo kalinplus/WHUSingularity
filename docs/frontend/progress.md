@@ -34,6 +34,16 @@
 
 无
 
+### 1.3 前端适配后端实际行为（2026-04-23）
+
+> 详见 `docs/frontend/03-frontend-api-contracts.md` 第 6 章"与后端实现不一致之处"
+
+| 改动 | 涉及文件 | 说明 |
+|---|---|---|
+| 订单状态字符串对齐 | `Home.tsx`, `UserCenter.tsx`, `AdminOrderList.tsx` | `'0'`/`'1'`/`'2'` → `'CREATED'`/`'PAID'`/`'CANCELLED'` |
+| `SnagOrderResponse` 去掉 `status` | `api/types.ts` | 后端抢单接口不返回 `status` |
+| `Order` 类型补充字段 | `api/types.ts` | 加 `productId`、`updateTime` |
+
 ---
 
 ## 2. 后端阻塞分析

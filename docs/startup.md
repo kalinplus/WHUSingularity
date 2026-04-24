@@ -152,10 +152,12 @@ Vite 代理已配置（`vite.config.ts`）：
 
 **现象**：抢单成功后，订单状态一直显示"处理中"，不会变为"成功"或"失败"。
 
-**根因**：`OrderConsumerService` 消费 `order-topic` 消息并将订单落库时，硬编码 `status = "CREATED"`（`singularity-order/.../consumer/OrderConsumerService.java:77`）。当前架构缺少将订单状态推进为 `PAID` 或 `CANCELLED` 的后续机制（没有状态机或二次 MQ 消费来更新订单）。
+**根因**：`OrderConsumerService` 消费 `order-topic` 消息并将订单落库时，硬编码 `status = "CREATED"`（`singularity-order/.../consumer/OrderConsumerService.java`）。当前架构缺少将订单状态推进为 `PAID` 或 `CANCELLED` 的后续机制（没有状态机或二次 MQ 消费来更新订单）。
 
 **影响范围**：前端订单列表、抢单状态轮询均显示"处理中"。
 
 ### 2. 订单状态类型与 API 契约不一致
 
 API 契约（`docs/frontend/03-frontend-api-contracts.md`）规定 `status` 为 number（0=处理中, 1=成功, 2=失败），但后端实际返回字符串 `"CREATED"`。前端已做兼容处理：将 `"CREATED"` 视为处理中。
+
+> 注：API 契约文档已更新，将后端实际行为记录在末尾的"与后端实现不一致之处"章节。

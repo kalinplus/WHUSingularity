@@ -69,8 +69,8 @@ export default function AdminOrderList() {
   }
 
   const statusLabel = (v: string) => {
-    if (v === '1') return <Tag color="success">成功</Tag>
-    if (v === '2') return <Tag color="error">失败</Tag>
+    if (v === 'PAID') return <Tag color="success">成功</Tag>
+    if (v === 'CANCELLED') return <Tag color="error">失败</Tag>
     return <Tag color="processing">处理中</Tag>
   }
 
@@ -95,9 +95,9 @@ export default function AdminOrderList() {
         </Form.Item>
         <Form.Item name="status" label="状态">
           <Select placeholder="选择状态" allowClear style={{ width: 140 }} options={[
-            { value: '0', label: '处理中' },
-            { value: '1', label: '成功' },
-            { value: '2', label: '失败' },
+            { value: 'CREATED', label: '处理中' },
+            { value: 'PAID', label: '成功' },
+            { value: 'CANCELLED', label: '失败' },
           ]} />
         </Form.Item>
         <Form.Item>

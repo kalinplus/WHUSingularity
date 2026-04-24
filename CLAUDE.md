@@ -60,21 +60,31 @@ docker/                     — Docker 构建相关
 ### Service Communication
 
 - **同步**: OpenFeign + Nacos 服务发现（如 Order 调用 User 验证用户）
-- **异步**: RocketMQ（如 Stock 消费库存更新消息）
+- **异步**: RocketMQ（`order-topic` 由 Order 服务发布，Order 自身的 `OrderConsumerService` 和 Stock 服务的 `OrderTopicConsumer` 同时消费）
 - **认证**: JWT + Redis token blacklist，无状态跨服务
+
+### Data Flow (订单 → 库存扣减)
+
+```
+用户抢单 → OrderService.snagOrder()
+  → Redis 原子减库存（bucket 计数器）
+  → RocketMQ half message（order-topic，含 orderId/productId/userId/slotId）
+  → OrderConsumerService（Order 服务）消费 → 订单落库 MySQL
+  → OrderTopicConsumer（Stock 服务）消费 → MySQL stock 表扣减库存 + 记录变更日志
+```
 
 ### Configuration Center
 
 业务配置统一托管在 Nacos，启动前需在控制台创建：
-- `singularity-order.yaml` — Redis、RocketMQ、Slot 分槽配置
+- `singularity-order.yaml` — Redis、RocketMQ（order-topic producer/consumer）、Slot 分槽配置（含 product-id）
 - `singularity-user.yaml` — Redis、JWT secret、blacklist 前缀
-- `singularity-stock.yaml` — Redis、RocketMQ consumer 配置
+- `singularity-stock.yaml` — Redis、RocketMQ consumer 配置（stock-topic + order-topic 双消费者）
 
 详见 `docs/nacos/README.md`。
 
 ### API Pattern
 
-统一 JSON 响应格式 `success/data/error`，错误码体系（如 `AUTH_TOKEN_INVALID`、`USER_USERNAME_EXISTS`）。公共端点：register、login；其余需 `Authorization: Bearer <JWT>`。
+统一 JSON 响应格式：成功为 `{ "success": true, "data": ... }`，失败为 `{ "success": false, "message": "..." }`。公共端点：register、login；其余需 `Authorization: Bearer <JWT>`。
 
 ## Workflow
 
