@@ -30,6 +30,33 @@
 - Flyway 目录：`classpath:db/migration`
 - Mapper 目录：`classpath:mapper/*.xml`
 
-## 6. 下一阶段入口
+## 6. Phase 1 完成状态
 
-- Phase 1 将补齐商品主表与索引设计，并在 Flyway 中落地正式迁移脚本。
+- 已完成商品主表结构与索引设计落地。
+- 已完成 Flyway 迁移版本：`V1__Init_Product_Module.sql`、`V2__Create_Product_Tables.sql`。
+
+## 7. Phase 2 API 契约（已实现）
+
+- `POST /api/product`：新增商品
+- `GET /api/product/{productId}`：查询商品详情
+- `PUT /api/product/{productId}`：更新商品
+- `DELETE /api/product/{productId}`：逻辑删除商品
+- `GET /api/product/list`：分页查询（支持 `status/category/keyword/pageNo/pageSize`）
+
+统一响应格式：
+
+- 成功：`{ "success": true, "data": ... }`
+- 失败：`{ "success": false, "error": { "code": "...", "message": "..." } }`
+
+错误码（Phase 2）：
+
+- `REQ_INVALID_PARAM`
+- `PRODUCT_NOT_FOUND`
+- `PRODUCT_ALREADY_EXISTS`
+- `INTERNAL_ERROR`
+
+## 8. 验证基线
+
+- 通过 Docker Compose 启动 `singularity-product-0`。
+- 通过接口验证新增、查询、更新、删除、分页查询。
+- 通过数据库回查确认逻辑删除与分页过滤行为正确。
