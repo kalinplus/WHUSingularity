@@ -206,7 +206,7 @@ export default function Home() {
                       </span>
                     ) : text
                   }
-                  type={color === 'processing' ? 'info' : color}
+                  type={color}
                   showIcon
                 />
               )

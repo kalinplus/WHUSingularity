@@ -307,6 +307,19 @@ services:
     ports:
       - "8083:8083"
 
+  singularity-front:
+    build:
+      context: ../singularity-front
+      dockerfile: Dockerfile
+    container_name: singularity-front
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - singularity-user-0
+      - singularity-order-0
+      - singularity-stock-0
+
 volumes:
   mysql_data:
   maven_repo:
