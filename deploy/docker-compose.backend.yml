@@ -352,6 +352,28 @@ services:
     ports:
       - "8080:8080"
 
+  singularity-scaler-0:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: singularity-scaler-0
+    restart: unless-stopped
+    working_dir: /workspace
+    command: sh -c "which docker || (apt-get update -qq && apt-get install -y -qq docker.io) && java -jar singularity-scaler/target/singularity-scaler-1.0-SNAPSHOT.jar"
+    environment:
+      SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+      SERVER_PORT: "9090"
+    volumes:
+      - ../:/workspace
+      - maven_repo:/root/.m2
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - nacos
+      - singularity-user-0
+      - singularity-order-0
+      - singularity-stock-0
+      - singularity-product-0
+    ports:
+      - "9090:9090"
+
   singularity-front:
     build:
       context: ../singularity-front

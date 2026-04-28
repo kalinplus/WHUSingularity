@@ -32,6 +32,8 @@ flowchart LR
         merchantdb[(DB\nmerchant DB)]
     end
 
+    scaler[singularity-scaler\n:9090\nAuto-scaler / Metrics / Docker]
+
     client -->|/api/*| gateway
     gateway -->|/api/user| user
     gateway -->|/api/order| order
@@ -43,6 +45,8 @@ flowchart LR
     stock -->|register / discover / config| nacos
     product -->|register / discover / config| nacos
     gateway -->|register / discover| nacos
+    scaler -->|register / discover / config| nacos
+    scaler -->|docker run / rm| infra
 
     order -->|OpenFeign via Nacos\nfetch user info for cross-service checks| user
 
@@ -77,6 +81,8 @@ flowchart LR
   Manages the product catalog (CRUD, search, listing) with a two-level Cache-Aside pattern: Caffeine local cache (5min TTL) → Redis remote cache (detail 30min, list 10min) → MySQL. Includes cache penetration protection via null placeholders.
 - `singularity-merchant`
   Self-contained merchant management service. Provides merchant registration/login (independent JWT auth), product catalog management, and inventory tracking with change logs. Operates independently without inter-service calls (default H2 database, optional MySQL via local profile).
+- `singularity-scaler`
+  Auto-scaler service that monitors QPS metrics from core services via Prometheus actuator endpoints, evaluates scaling policies, and manages Docker container lifecycle (start/remove) based on thresholds and cooldown periods.
 
 ## Key Interaction Patterns
 

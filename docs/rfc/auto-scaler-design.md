@@ -92,7 +92,9 @@
 
 ## 分步计划
 
-### Step 1: 现有服务添加 Actuator + Prometheus 依赖
+> **状态：全部已完成**（2026-04-28）
+
+### Step 1: 现有服务添加 Actuator + Prometheus 依赖 ✅
 
 为 6 个服务的 `pom.xml` 添加依赖，为 6 个服务的 `application.yml` 添加 management 端点配置。零 Java 代码改动。
 
@@ -111,7 +113,7 @@
   curl -s http://localhost:8081/actuator/prometheus | grep http_server_requests_seconds_count
   ```
 
-### Step 2: 创建 singularity-scaler 模块骨架
+### Step 2: 创建 singularity-scaler 模块骨架 ✅
 
 新建模块目录结构、pom.xml、application.yml、bootstrap.yml、ScalerApplication.java，注册到父 pom modules。
 
@@ -126,7 +128,7 @@
   mvn clean package -DskipTests
   ```
 
-### Step 3: 实现 Nacos 服务发现 + Prometheus 指标采集
+### Step 3: 实现 Nacos 服务发现 + Prometheus 指标采集 ✅
 
 实现 NacosServiceDiscovery（获取健康实例列表和地址）、PrometheusTextParser（解析 Prometheus 文本格式）、MetricsScraper（HTTP 抓取 + 内存存储计算 rate）。
 
@@ -140,7 +142,7 @@
   # 可通过临时 endpoint 或日志确认指标值被正确解析（此步无 REST API，用日志验证）
   ```
 
-### Step 4: 实现 Docker 容器管理（端口分配 + 启停执行）
+### Step 4: 实现 Docker 容器管理（端口分配 + 启停执行） ✅
 
 实现 DockerContainerInspector（解析 `docker ps` 输出）、PortAllocator（端口扫描分配）、DockerCommandExecutor（ProcessBuilder 执行 docker run/rm）。端口分配逻辑从现有 PS 脚本移植。
 
@@ -154,7 +156,7 @@
   docker ps | grep singularity-order
   ```
 
-### Step 5: 实现策略评估 + 冷却 + 编排 + 定时任务
+### Step 5: 实现策略评估 + 冷却 + 编排 + 定时任务 ✅
 
 实现 ScalerProperties（配置绑定）、PolicyEvaluator（阈值比较）、CooldownManager（防抖动）、ScalingService（编排全流程）、ScalingScheduler（@Scheduled 轮询）。
 
@@ -172,7 +174,7 @@
   # 无 Prometheus 端点访问时不应触发伸缩，日志显示 "metric below threshold" 或 "cooldown active"
   ```
 
-### Step 6: 实现 REST API + Nacos 策略配置
+### Step 6: 实现 REST API + Nacos 策略配置 ✅
 
 实现 ScalerController（status + scale 端点），创建 Nacos 配置 `singularity-scaler.yaml`。
 
@@ -189,7 +191,7 @@
   docker ps | grep singularity-order   # 确认新容器启动
   ```
 
-### Step 7: 部署集成与文档更新
+### Step 7: 部署集成与文档更新 ✅
 
 将 scaler 加入 docker-compose，更新 Nacos 文档和项目文档。
 
@@ -264,6 +266,64 @@ docker compose -f deploy/docker-compose.backend.yml config > /dev/null && echo "
 - 如某步失败：先分析原因，给出修复方案，等确认后再修
 - 如连续两次失败：停下来，列出可能原因，不要继续盲目重试
 - 如遇到环境/依赖问题：报告具体报错，不要自行修改环境配置
+
+---
+
+## 实现问题与修复记录
+
+以下为实际开发测试过程中遇到的问题及修复方案，供后续维护参考。
+
+### 问题 1：Bean 名称冲突 — `NacosServiceDiscovery`
+
+**现象**：Spring Boot 启动时报 `BeanDefinitionOverrideException`：
+```
+Cannot register bean definition for bean 'nacosServiceDiscovery'
+since there is already [...] bound
+```
+**根因**：类名 `NacosServiceDiscovery` 产生的 bean 名与 Spring Cloud Alibaba 的 `com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration` 中的 bean 冲突。
+**修复**：将类重命名为 `InstanceDiscovery`，更新所有引用（`MetricsScraper`、`ScalingService`）。
+**文件**：`singularity-scaler/src/main/java/.../discovery/InstanceDiscovery.java`
+
+### 问题 2：scaler 容器内缺少 docker CLI
+
+**现象**：`DockerCommandExecutor.execute()` 抛出 `IOException: Cannot run program "docker": error=2, No such file or directory`
+**根因**：`maven:3.9.9-eclipse-temurin-21` 基础镜像不含 Docker CLI，scaler 服务虽然挂载了宿主机的 `/var/run/docker.sock`，但容器内没有 `docker` 命令。
+**修复**：在 `docker-compose.backend.yml` 的 scaler 服务 `command` 中加入自动安装逻辑：
+```yaml
+command: sh -c "which docker || (apt-get update -qq && apt-get install -y -qq docker.io) && java -jar ..."
+```
+**文件**：`deploy/docker-compose.backend.yml`
+
+### 问题 3：新容器无法访问 jar 文件
+
+**现象**：`docker run` 启动的新实例报错 `Unable to access jarfile singularity-user/target/singularity-user-1.0-SNAPSHOT.jar`
+**根因**：`DockerCommandExecutor` 构造 `-v` 挂载时使用的 `repoRoot` 是容器内的 `/workspace`，但 `docker run` 是在宿主机上执行的，volume mount 需要宿主机侧路径。
+**修复**：在构造函数中增加三层探测逻辑：
+1. 优先读取环境变量 `SCALER_REPO_ROOT`
+2. 否则通过 `docker inspect` 查询自身容器的 `/workspace` mount source（获取宿主机侧路径）
+3. 否则按当前工作目录回退推算
+**文件**：`singularity-scaler/src/main/java/.../docker/DockerCommandExecutor.java`
+
+### 问题 4：order 服务 Flyway checksum mismatch
+
+**现象**：order 容器启动失败，日志报 `FlywayValidateException: Migration checksum mismatch for migration version 1`
+**根因**：`singularity-order/src/main/resources/db/migration/V1__Create_Order_Tables.sql` 在数据库已应用后被修改，数据库中记录的 checksum（`141246234`）与本地文件重新计算的值（`-1048902616`）不一致。
+**修复**：在 MySQL 中 drop 并重建 `singularity_order` 数据库，让 Flyway 重新执行迁移。开发环境数据不珍贵，此方案最简单。
+**操作**：
+```sql
+DROP DATABASE IF EXISTS singularity_order;
+CREATE DATABASE singularity_order DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 问题 5：product 服务连接失败 — `Unknown database 'singularity_product'`
+
+**现象**：product 容器启动失败，日志报 `SQLSyntaxErrorException: Unknown database 'singularity_product'`
+**根因**：MySQL 的 `mysql_data` Docker volume 是之前运行残留的，`docker-entrypoint-initdb.d` 中的 `01-init.sql` 仅在 volume 首次初始化时执行，后续修改 init 脚本不会重新运行。因此 `singularity_product` 数据库从未被创建。
+**修复**：手动在 MySQL 中创建数据库：
+```sql
+CREATE DATABASE IF NOT EXISTS singularity_product DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+**注意**：`docker-compose.backend.yml` 中 product-0 已正确配置了 `SPRING_DATASOURCE_URL` 环境变量，无需修改。
 
 ---
 

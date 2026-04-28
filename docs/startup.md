@@ -24,6 +24,7 @@ startup.cmd -m standalone
 - `singularity-order.yaml`
 - `singularity-user.yaml`
 - `singularity-stock.yaml`
+- `singularity-scaler.yaml`（可选，覆盖默认阈值时创建）
 
 #### 1.3 启动 MySQL
 
@@ -87,6 +88,9 @@ java -jar singularity-merchant/target/singularity-merchant-1.0-SNAPSHOT.jar
 
 # 启动 API 网关（可选，统一入口）
 java -jar singularity-gateway/target/singularity-gateway-1.0-SNAPSHOT.jar
+
+# 启动自动伸缩服务（可选，需 Docker 环境）
+java -jar singularity-scaler/target/singularity-scaler-1.0-SNAPSHOT.jar
 ```
 
 ### 3. 验证服务注册
@@ -99,6 +103,7 @@ java -jar singularity-gateway/target/singularity-gateway-1.0-SNAPSHOT.jar
 - `singularity-product`
 - `singularity-merchant`（如启用 Nacos discovery）
 - `singularity-gateway`
+- `singularity-scaler`
 
 ---
 
@@ -179,3 +184,25 @@ Vite 代理已配置（`vite.config.ts`）：
 API 契约（`docs/frontend/03-frontend-api-contracts.md`）规定 `status` 为 number（0=处理中, 1=成功, 2=失败），但后端实际返回字符串 `"CREATED"`。前端已做兼容处理：将 `"CREATED"` 视为处理中。
 
 > 注：API 契约文档已更新，将后端实际行为记录在末尾的"与后端实现不一致之处"章节。
+
+### 3. scaler 自动伸缩服务环境依赖
+
+**Docker Compose 启动时的额外依赖**：
+- scaler 服务需要挂载宿主机的 `/var/run/docker.sock`，且容器内需要安装 `docker.io`（已在 `command` 中自动处理）
+- 首次启动时若遇到 `Cannot run program "docker"`，等待 scaler 容器自动完成 `apt-get install docker.io` 即可
+
+**MySQL 数据库初始化**：
+- 若 `mysql_data` volume 是之前运行残留的，`deploy/mysql/init/01-init.sql` 不会重新执行
+- 如遇 `Unknown database 'singularity_product'` 或 order 的 Flyway checksum mismatch，需手动处理数据库：
+  ```sql
+  -- 重建 order 数据库（Flyway 会重新执行迁移）
+  DROP DATABASE IF EXISTS singularity_order;
+  CREATE DATABASE singularity_order DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+  -- 创建 product 数据库
+  CREATE DATABASE IF NOT EXISTS singularity_product DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  ```
+
+**Nacos 配置**：
+- scaler 默认阈值已内嵌在 `application.yml` 中，如需覆盖，在 Nacos 创建 `singularity-scaler.yaml`
+- 详见 `docs/nacos/README.md` 和 `docs/rfc/auto-scaler-design.md`

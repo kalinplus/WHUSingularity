@@ -25,7 +25,7 @@ mvn -pl singularity-user test    # 测试单个模块
 mvn test                         # 测试全部
 ```
 
-**启动顺序**: Nacos (8848) → user (8090) → stock (8082) → order (8081) → product (8087) → merchant (8091) → gateway (8080)
+**启动顺序**: Nacos (8848) → user (8090) → stock (8082) → order (8081) → product (8087) → merchant (8091) → gateway (8080) → scaler (9090)
 
 **基础设施依赖**: MySQL 3306, Redis 6379, Nacos 8848, RocketMQ NameServer 9876 + Broker 10911
 
@@ -46,6 +46,7 @@ singularity-order/          — 订单服务：高并发抢单，依赖 core 框
 singularity-stock/          — 库存服务：库存管理，MQ 驱动，Flyway 迁移 (8082)
 singularity-product/        — 商品服务：商品 CRUD + Caffeine/Redis 两级缓存，Flyway 迁移 (8087)
 singularity-merchant/       — 商户服务：商户注册/JWT认证、商品管理、库存管理 (8091，默认 H2)
+singularity-scaler/         — 自动伸缩服务：Prometheus 指标采集 + Docker 容器启停 (9090)
 api-integration-tests-python/ — 业务流程 Python 测试脚本
 deploy/                     — Docker Compose 编排文件 + 容器伸缩脚本
 docker/                     — Docker 构建相关
@@ -86,6 +87,7 @@ docker/                     — Docker 构建相关
 - `singularity-stock.yaml` — Redis、RocketMQ consumer 配置（stock-topic + order-topic 双消费者）
 - `singularity-product.yaml` — Redis 缓存配置（如需远程缓存覆盖默认值）
 - `singularity-gateway.yaml` — 路由配置（可覆盖 application.yml 中的默认路由）
+- `singularity-scaler.yaml` — 自动伸缩策略配置（阈值、实例数限制、端口分配）
 
 详见 `docs/nacos/README.md`。
 

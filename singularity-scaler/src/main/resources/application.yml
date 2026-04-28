@@ -1,0 +1,88 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: singularity-scaler
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+scaler:
+  interval-seconds: 15
+  cooldown-seconds: 120
+  services:
+    - name: singularity-order
+      base-port: 8081
+      port-step: 2
+      min-instances: 1
+      max-instances: 5
+      qps-scale-up-threshold: 100
+      qps-scale-down-threshold: 20
+      image: maven:3.9.9-eclipse-temurin-21
+      env:
+        SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_order?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+        SPRING_DATA_REDIS_HOST: redis
+        SPRING_DATA_REDIS_PORT: "6379"
+        ROCKETMQ_NAME_SERVER: rmq-namesrv:9876
+        ROCKETMQ_PRODUCER_GROUP: order-producer-group
+        ROCKETMQ_CONSUMER_GROUP: order-consumer-group
+        SPRING_APPLICATION_JSON: '{"singularity":{"order":{"slots":[{"id":"bucket-1","redis-key":"stock:bucket-1","product-id":"PROD_001"},{"id":"bucket-2","redis-key":"stock:bucket-2","product-id":"PROD_002"}]}}}'
+    - name: singularity-user
+      base-port: 8090
+      port-step: 1
+      min-instances: 1
+      max-instances: 5
+      qps-scale-up-threshold: 100
+      qps-scale-down-threshold: 20
+      image: maven:3.9.9-eclipse-temurin-21
+      env:
+        SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_user?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+        SPRING_DATA_REDIS_HOST: redis
+        SPRING_DATA_REDIS_PORT: "6379"
+        JWT_SECRET: dev-secret-key
+    - name: singularity-stock
+      base-port: 8082
+      port-step: 2
+      min-instances: 1
+      max-instances: 5
+      qps-scale-up-threshold: 100
+      qps-scale-down-threshold: 20
+      image: maven:3.9.9-eclipse-temurin-21
+      env:
+        SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_stock?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+        SPRING_DATA_REDIS_HOST: redis
+        SPRING_DATA_REDIS_PORT: "6379"
+        ROCKETMQ_NAME_SERVER: rmq-namesrv:9876
+        ROCKETMQ_CONSUMER_GROUP: stock-consumer-group
+    - name: singularity-product
+      base-port: 8087
+      port-step: 1
+      min-instances: 1
+      max-instances: 5
+      qps-scale-up-threshold: 100
+      qps-scale-down-threshold: 20
+      image: maven:3.9.9-eclipse-temurin-21
+      env:
+        SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_product?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+        SPRING_DATA_REDIS_HOST: redis
+        SPRING_DATA_REDIS_PORT: "6379"

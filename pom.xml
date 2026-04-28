@@ -27,6 +27,7 @@
         <module>singularity-gateway</module>
         <module>singularity-merchant</module>
         <module>singularity-product</module>
+        <module>singularity-scaler</module>
     </modules>
 
     <dependencyManagement>
