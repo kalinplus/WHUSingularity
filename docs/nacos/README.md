@@ -118,6 +118,57 @@ rocketmq:
 
 ---
 
+### 2.4 singularity-product 配置
+
+**Data ID**: `singularity-product.yaml`
+**Group**: `DEFAULT_GROUP`
+**配置格式**: `YAML`
+**配置内容**（可选，仅当需要覆盖默认 Redis 缓存配置时创建）:
+
+```yaml
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+```
+
+---
+
+### 2.5 singularity-gateway 配置
+
+**Data ID**: `singularity-gateway.yaml`
+**Group**: `DEFAULT_GROUP`
+**配置格式**: `YAML`
+**配置内容**（可选，仅当需要覆盖默认路由配置时创建）:
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-route
+          uri: lb://singularity-user
+          predicates:
+            - Path=/api/user/**
+        - id: order-route
+          uri: lb://singularity-order
+          predicates:
+            - Path=/api/order/**
+        - id: stock-route
+          uri: lb://singularity-stock
+          predicates:
+            - Path=/api/stock/**
+        - id: product-route
+          uri: lb://singularity-product
+          predicates:
+            - Path=/api/product/**
+```
+
+> **注意**: `singularity-merchant` 默认不启用 Nacos（`discovery.enabled: false`, `config.enabled: false`），无需创建 Nacos 配置。如需启用，切换到 local profile 并取消注释 bootstrap.yml 中的 Nacos 配置。
+
+---
+
 ## 3. 配置创建步骤
 
 1. 登录 Nacos 控制台：http://localhost:8848/nacos

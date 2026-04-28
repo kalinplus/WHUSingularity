@@ -39,6 +39,12 @@ CREATE DATABASE singularity_user DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode
 
 -- 库存服务数据库（表结构由 Flyway 自动创建）
 CREATE DATABASE singularity_stock DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 商品服务数据库（表结构由 Flyway 自动创建）
+CREATE DATABASE singularity_product DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 商户服务数据库（如使用 MySQL local profile，表结构由 init-schema.sql 初始化）
+CREATE DATABASE singularity_merchant DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 #### 1.4 启动 Redis
@@ -72,6 +78,15 @@ java -jar singularity-stock/target/singularity-stock-1.0-SNAPSHOT.jar
 
 # 启动订单服务
 java -jar singularity-order/target/singularity-order-1.0-SNAPSHOT.jar
+
+# 启动商品服务
+java -jar singularity-product/target/singularity-product-1.0-SNAPSHOT.jar
+
+# 启动商户服务（默认使用 H2 内存数据库，无需 MySQL）
+java -jar singularity-merchant/target/singularity-merchant-1.0-SNAPSHOT.jar
+
+# 启动 API 网关（可选，统一入口）
+java -jar singularity-gateway/target/singularity-gateway-1.0-SNAPSHOT.jar
 ```
 
 ### 3. 验证服务注册
@@ -81,6 +96,9 @@ java -jar singularity-order/target/singularity-order-1.0-SNAPSHOT.jar
 - `singularity-order`
 - `singularity-user`
 - `singularity-stock`
+- `singularity-product`
+- `singularity-merchant`（如启用 Nacos discovery）
+- `singularity-gateway`
 
 ---
 
